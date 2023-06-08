@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Головна</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'main.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+</head>
+<body>
+{% load django_bootstrap5 %} {% bootstrap_css %} {% bootstrap_javascript %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<div class="container">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Delivery company</a>
+        </div>
+    </nav>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="col list-group" style="">
+                {% for shop in shops %}
+<a href="{% url 'chose-store' shop.pk %}"
+                       class="list-group-item list-group-item-action">                            <img src="{{ shop.logo.url }}" alt="{{ shop.shop.name }} Image" style="height: 45px">  {{ shop.name }}</a>
+
+                {% endfor %}
+                <a href="{% url 'basket' %}" class="btn btn-danger">Перейти до кошика</a>
+            </div>
+
+        </div>
+        <div class="col-lg-9">
+            {% for chunk in goods %}
+
+
+
+                <div class="row">
+                    {% for good in chunk %}
+
+                        <div class="col-lg-4">
+                            <div class="card">
+                                <img src="{{ good.image.url }}" class="card-img-top" alt="...">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ good.name }}</h5>
+                                    <p class="card-text">{{ good.description }}</p>
+                                    <p class="card-text">Ціна: {{ good.price }}</p>
+                                    <p class="card-text p_closer">
+                                        <button class="btn btn-primary" id="decreaseBtn{{ good.id }}">-</button>
+                                        <label id="count_label{{ good.id }}">0</label>
+                                        <button class="btn btn-primary" id="increaseBtn{{ good.id }}">+</button>
+                                    </p><br>
+                                    <button id='add_to_basket{{ good.id }}' class="btn btn-primary add_to_basket">Додати
+                                        до кошика
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <script>
+                            let count{{ good.id }} = 0;
+                            document.getElementById('decreaseBtn{{ good.id }}').onclick = function () {
+                                if (count{{ good.id }} > 0) {
+                                    count{{ good.id }} -= 1;
+                                    document.getElementById("count_label{{ good.id }}").innerHTML = count{{ good.id }};
+                                }
+                            }
+                            document.getElementById('increaseBtn{{ good.id }}').onclick = function () {
+                                count{{ good.id }} += 1;
+                                document.getElementById("count_label{{ good.id }}").innerHTML = count{{ good.id }};
+                            }
+                        </script>
+                        {% csrf_token %}
+                        <script>
+                            $(document).ready(function () {
+                                function setZero() {
+                                    document.getElementById('count_label{{ good.id }}').innerHTML = '0';
+                                }
+
+                                $('#add_to_basket{{ good.id }}').click(function (e) {
+                                    e.preventDefault();
+                                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                                    var payload = {
+                                        id: {{ good.id }},
+                                        quantity: parseInt($('#count_label{{ good.id }}').text()),
+                                        shop_id: {{ shop_id }}
+                                    };
+
+                                    if (payload.quantity === 0) {
+                                        setZero();
+                                        return;
+                                    }
+
+                                    $.ajax({
+                                        url: 'add_to_basket/',
+                                        headers: {"X-CSRFToken": csrfToken},
+                                        type: 'POST',
+                                        data: JSON.stringify(payload),
+                                        contentType: 'application/json',
+                                        success: function (response) {
+                                            if (response.message === 'not_authenticated') {
+                                                window.location.href = '/login/';
+                                            } else {
+                                                setZero();
+                                                console.log('Item added to basket successfully');
+                                            }
+                                        },
+                                        error: function (xhr, textStatus, errorThrown) {
+                                            console.error('Error adding item to basket:', errorThrown);
+                                        }
+                                    });
+                                });
+                            });
+                        </script>
+
+
+
+                    {% endfor %}
+                </div>
+
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
+
